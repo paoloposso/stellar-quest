@@ -12,13 +12,13 @@ log4js.configure({
 });
 
 const logger = log4js.getLogger();
-const dotenv = require('dotenv'); // Import dotenv
+const dotenv = require('dotenv');
 
-dotenv.config(); // Load environment variables from .env file
+dotenv.config();
 
 const Networks = require('stellar-sdk').Networks;
 
-const { buildStellarNetworkAdapter } = require('./stellar/stellar-network-adapter');
+const { buildStellarNetworkAdapter } = require('../stellar/stellar-network-adapter');
 
 const secretKey = process.env.SECRET_KEY;
 const stellarNetwork = process.env.STELLAR_NETWORK;
@@ -35,8 +35,12 @@ const stellarNetAdapter = buildStellarNetworkAdapter(
 
 (async () => {
     try {
-        console.debug(await stellarNetAdapter.createAccount(secretKey, '1000'));
-        console.debug(await stellarNetAdapter.transfer(secretKey, 'GC33G756LXJ6HCJJ5TT4O73AZYLOVTCTMZB4QKWGXCSZOBMTK7XTNUNW', '150'));
+        const receiverPubKey = process.env.RECEIVER_PUB_KEY;
+        if (!receiverPubKey) {
+            const res = await stellarNetAdapter.createAccount(secretKey, '10000');
+            receiverPubKey = res.newAccountPubKey;
+        }
+        console.debug(await stellarNetAdapter.transfer(secretKey, receiverPubKey, '150'));
     } catch (err) {
         logger.error(err);
     }
