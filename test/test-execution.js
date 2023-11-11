@@ -35,12 +35,12 @@ const stellarNetAdapter = buildStellarNetworkAdapter(
 
 (async () => {
     try {
-        const receiverPubKey = process.env.RECEIVER_PUB_KEY;
+        let receiverPubKey = process.env.RECEIVER_PUB_KEY;
         if (!receiverPubKey) {
-            const res = await stellarNetAdapter.createAccount(secretKey, '10000');
+            const res = await stellarNetAdapter.createAccount(secretKey, '1000');
             receiverPubKey = res.newAccountPubKey;
         }
-        console.debug(await stellarNetAdapter.transfer(secretKey, receiverPubKey, '150'));
+        console.debug(await stellarNetAdapter.transfer(secretKey, receiverPubKey, '10'));
     } catch (err) {
         logger.error(err);
     }

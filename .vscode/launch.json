@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "node",
+        "request": "launch",
+        "name": "Debug Your Application",
+        "program": "${workspaceFolder}/test/test-execution.js", // Replace with your entry file
+        "envFile": "${workspaceFolder}/test/.env", // Specify the path to your .env file
+        "outFiles": [],
+        "skipFiles": [
+          "<node_internals>/**"
+        ],
+        "args": []
+      }
+    ]
+}
+  

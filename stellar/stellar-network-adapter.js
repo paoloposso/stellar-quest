@@ -60,18 +60,12 @@ module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase) => {
     
         logger.info(transaction.toXDR());
     
-        try {
-            let res = await server.submitTransaction(transaction);
-            logger.info(`Transaction Successful! Hash: ${res.hash}`);
-            return { 
-                transactionHash: res.hash,
-                newAccountPubKey: newKeypair.publicKey()
-            };
-        } catch (error) {
-            logger.error(`${error}.`, `More details:\n${JSON.stringify(error.response.data.extras, null, 2)}`)
-        }
-
-        return null;
+        let res = await server.submitTransaction(transaction);
+        logger.info(`Transaction Successful! Hash: ${res.hash}`);
+        return { 
+            transactionHash: res.hash,
+            newAccountPubKey: newKeypair.publicKey()
+        };
     }
 
     const transfer = async (originSecretKey, destinationPubKey, amount) => {
