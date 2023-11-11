@@ -15,7 +15,7 @@ const {
  * @param {string} serverURL 
  * @param {Networks} networkPassphrase 
  * @param {string} secretKey
- * @returns 
+ * @returns {{}}
  */
 module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase, secretKey) => {
     if (!serverURL) {
@@ -28,6 +28,11 @@ module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase, secre
         networkPassphrase = Networks.TESTNET;
     }
 
+    /**
+     * 
+     * @param {string} startingBalance 
+     * @returns {{transactionHash: string, newAccountPubKey: string}}}
+     */
     const createAccount = async (startingBalance) => {
         const accountCreatorKeyPair = Keypair.fromSecret(secretKey);
         const newKeypair = Keypair.random();
