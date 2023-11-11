@@ -23,7 +23,7 @@ const { buildStellarNetworkAdapter } = require('./stellar/stellar-network-adapte
 const secretKey = process.env.SECRET_KEY;
 const stellarNetwork = process.env.STELLAR_NETWORK;
 
-getNetwork = (stellarNetwork) => {
+const getNetwork = (stellarNetwork) => {
     if (stellarNetwork === 'PUBLIC') return 'https://horizon.stellar.org';
     return 'https://horizon-testnet.stellar.org';
 };
@@ -35,7 +35,8 @@ const stellarNetAdapter = buildStellarNetworkAdapter(
 
 (async () => {
     try {
-        console.debug(await stellarNetAdapter.createAccount('1000'));
+        console.debug(await stellarNetAdapter.createAccount(secretKey, '1000'));
+        console.debug(await stellarNetAdapter.transfer(secretKey, 'GC33G756LXJ6HCJJ5TT4O73AZYLOVTCTMZB4QKWGXCSZOBMTK7XTNUNW', '150'));
     } catch (err) {
         logger.error(err);
     }

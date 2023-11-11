@@ -7,38 +7,42 @@ const {
     TransactionBuilder,
     Networks,
     Operation,
-    BASE_FEE
+    BASE_FEE,
+    Asset
 } = stellarSdk;
 
 /**
  * 
  * @param {string} serverURL 
  * @param {Networks} networkPassphrase 
- * @param {string} secretKey
- * @returns {{}}
+ * @param {string} signerSecretKey
+ * @returns {{createAccount: (signerSecretKey: string, startingBalance: string) => Promise<{transactionHash: string, newAccountPubKey: string}>, transfer: (originSecretKey: string, destinationPubKey: string, amount: string) => Promise<{transactionHash: string, origin: string, destination: string}>}}
  */
-module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase, secretKey) => {
+module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase) => {
     if (!serverURL) {
         throw new Error('serverURL is required');
-    }
-    if (!secretKey) {
-        throw new Error('secretKey is required');
     }
     if (!networkPassphrase || networkPassphrase.length === 0) {
         networkPassphrase = Networks.TESTNET;
     }
 
+    const server = new Server(serverURL);
+
     /**
      * 
+     * @param {string} signerSecretKey 
      * @param {string} startingBalance 
      * @returns {{transactionHash: string, newAccountPubKey: string}}}
      */
-    const createAccount = async (startingBalance) => {
-        const accountCreatorKeyPair = Keypair.fromSecret(secretKey);
+    const createAccount = async (signerSecretKey, startingBalance) => {
+        if (!signerSecretKey) {
+            throw new Error('secretKey is required');
+        }
+
         const newKeypair = Keypair.random();
+        const signerKeyPair = Keypair.fromSecret(signerSecretKey);
     
-        const server = new Server(serverURL);
-        const questAccount = await server.loadAccount(accountCreatorKeyPair.publicKey());
+        const questAccount = await server.loadAccount(signerKeyPair.publicKey());
     
         let transaction = new TransactionBuilder(
                     questAccount, {
@@ -52,7 +56,7 @@ module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase, secre
                 .setTimeout(30)
                 .build();
     
-        transaction.sign(accountCreatorKeyPair);
+        transaction.sign(signerKeyPair);
     
         logger.info(transaction.toXDR());
     
@@ -69,8 +73,38 @@ module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase, secre
 
         return null;
     }
+
+    const transfer = async (originSecretKey, destinationPubKey, amount) => {
+        const originKeyPair = Keypair.fromSecret(originSecretKey);
+
+        const originAccount = await server.loadAccount(originKeyPair.publicKey())
+
+        const transaction = new TransactionBuilder(
+            originAccount, {
+              fee: BASE_FEE,
+              networkPassphrase: networkPassphrase
+            })
+            .addOperation(Operation.payment({
+              destination: destinationPubKey,
+              asset: Asset.native(),
+              amount: amount
+            }))
+            .setTimeout(30)
+            .build();
+        
+        transaction.sign(originKeyPair);
+
+        let res = await server.submitTransaction(transaction);
+
+        return {
+            transactionHash: res.hash,
+            origin: originKeyPair.publicKey(),
+            destination: destinationPubKey
+        };
+    }
     
     return {
         createAccount,
+        transfer
     };
 };
