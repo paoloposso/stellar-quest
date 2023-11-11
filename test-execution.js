@@ -21,10 +21,16 @@ const Networks = require('stellar-sdk').Networks;
 const { buildStellarNetworkAdapter } = require('./stellar/stellar-network-adapter');
 
 const secretKey = process.env.SECRET_KEY;
+const stellarNetwork = process.env.STELLAR_NETWORK;
+
+getNetwork = (stellarNetwork) => {
+    if (stellarNetwork === 'PUBLIC') return 'https://horizon.stellar.org';
+    return 'https://horizon-testnet.stellar.org';
+};
 
 const stellarNetAdapter = buildStellarNetworkAdapter(
-    'https://horizon-testnet.stellar.org', 
-    Networks.TESTNET,
+    getNetwork(stellarNetwork), 
+    stellarNetwork === 'PUBLIC' ? Networks.PUBLIC : Networks.TESTNET,
     secretKey);
 
 (async () => {
