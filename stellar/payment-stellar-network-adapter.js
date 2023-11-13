@@ -16,7 +16,7 @@ const {
  * @param {string} serverURL 
  * @param {Networks} networkPassphrase 
  * @param {string} signerSecretKey
- * @returns {{createAccount: (signerSecretKey: string, startingBalance: string) => Promise<{transactionHash: string, newAccountPubKey: string}>, transfer: (originSecretKey: string, destinationPubKey: string, amount: string) => Promise<{transactionHash: string, origin: string, destination: string}>}}
+ * @returns {{createAccount: (signerSecretKey: string, startingBalance: string) => {transactionHash: string, newAccountPubKey: string}, transfer: (originSecretKey: string, destinationPubKey: string, amount: string) => {transactionHash: string, origin: string, destination: string}, changeTrust: (sourceSecretKey: string, issuerPubKey: string, assetCode: string, limit: string) => {transactionHash: string}}
  */
 module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase) => {
     if (!serverURL) {
@@ -36,7 +36,7 @@ module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase) => {
      */
     const createAccount = async (signerSecretKey, startingBalance) => {
         if (!signerSecretKey) {
-            throw new Error('secretKey is required');
+            throw new Error('signerSecretKey is required');
         }
 
         const newKeypair = Keypair.random();
@@ -68,7 +68,24 @@ module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase) => {
         };
     }
 
+    /**
+     * 
+     * @param {string} originSecretKey 
+     * @param {string} destinationPubKey 
+     * @param {string} amount 
+     * @returns 
+     */
     const transfer = async (originSecretKey, destinationPubKey, amount) => {
+        if (!originSecretKey || originSecretKey.length === 0) {
+            throw new Error('originSecretKey is required');
+        }
+        if (!destinationPubKey || destinationPubKey.length === 0) {
+            throw new Error('destinationPubKey is required');
+        }
+        if (!amount || amount.length === 0) {
+            throw new Error('amount is required');
+        }
+
         const originKeyPair = Keypair.fromSecret(originSecretKey);
 
         const originAccount = await server.loadAccount(originKeyPair.publicKey())
@@ -96,9 +113,60 @@ module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase) => {
             destination: destinationPubKey
         };
     }
+
+    /**
+     * 
+     * @param {string} sourceSecretKey 
+     * @param {string} issuerPubKey 
+     * @param {string} assetCode 
+     * @param {string} limit 
+     * @returns 
+     */
+    const changeTrust = async (sourceSecretKey, issuerPubKey, assetCode, limit) => {
+        if (!sourceSecretKey || sourceSecretKey.length === 0) {
+            throw new Error('sourceSecretKey is required');
+        }
+        if (!issuerPubKey || issuerPubKey.length === 0) {
+            throw new Error('issuerPubKey is required');
+        }
+        if (!limit || limit.length === 0) {
+            throw new Error('limit is required');
+        }
+
+        const questKeypair = Keypair.fromSecret(sourceSecretKey);
+        const questAccount = await server.loadAccount(questKeypair.publicKey())
+
+        const santaAsset = new Asset(
+            code = assetCode,
+            issuer = issuerPubKey
+        )
+
+        const transaction = new TransactionBuilder(
+            questAccount, {
+              fee: BASE_FEE,
+              networkPassphrase: networkPassphrase
+            })
+            .addOperation(Operation.changeTrust({
+              asset: santaAsset,
+              limit: limit,
+              source: questKeypair.publicKey()
+            }))
+            .setTimeout(30)
+            .build()     
+        
+        transaction.sign(questKeypair)
+
+        let res = await server.submitTransaction(transaction);
+        return {
+            transactionHash: res.hash,
+            issuer: issuerPubKey,
+            source: questKeypair.publicKey()
+        };
+    }
     
     return {
         createAccount,
-        transfer
+        transfer,
+        changeTrust
     };
 };

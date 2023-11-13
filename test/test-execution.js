@@ -18,7 +18,7 @@ dotenv.config();
 
 const Networks = require('stellar-sdk').Networks;
 
-const { buildStellarNetworkAdapter } = require('../stellar/stellar-network-adapter');
+const { buildStellarNetworkAdapter } = require('../stellar/payment-stellar-network-adapter');
 
 const secretKey = process.env.SECRET_KEY;
 const stellarNetwork = process.env.STELLAR_NETWORK;
@@ -35,12 +35,13 @@ const stellarNetAdapter = buildStellarNetworkAdapter(
 
 (async () => {
     try {
-        let receiverPubKey = process.env.RECEIVER_PUB_KEY;
-        if (!receiverPubKey) {
+        let generatedPubKey = process.env.RECEIVER_PUB_KEY;
+        if (!generatedPubKey) {
             const res = await stellarNetAdapter.createAccount(secretKey, '1000');
-            receiverPubKey = res.newAccountPubKey;
+            generatedPubKey = res.newAccountPubKey;
         }
-        console.debug(await stellarNetAdapter.transfer(secretKey, receiverPubKey, '10'));
+        // console.debug(await stellarNetAdapter.transfer(secretKey, receiverPubKey, '10'));
+        console.debug(await stellarNetAdapter.changeTrust(secretKey, generatedPubKey, 'SANTA', '100'));
     } catch (err) {
         logger.error(err);
     }
