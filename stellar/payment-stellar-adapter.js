@@ -18,7 +18,7 @@ const {
  * @param {string} signerSecretKey
  * @returns {{createAccount: (signerSecretKey: string, startingBalance: string) => {transactionHash: string, newAccountPubKey: string}, transfer: (originSecretKey: string, destinationPubKey: string, amount: string) => {transactionHash: string, origin: string, destination: string}, changeTrust: (sourceSecretKey: string, issuerPubKey: string, assetCode: string, limit: string) => {transactionHash: string}}
  */
-module.exports.buildStellarNetworkAdapter = (serverURL, networkPassphrase) => {
+module.exports.buildPaymentStellarAdapter = (serverURL, networkPassphrase) => {
     if (!serverURL) {
         throw new Error('serverURL is required');
     }
