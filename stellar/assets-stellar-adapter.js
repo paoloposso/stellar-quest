@@ -1,5 +1,6 @@
 const stellarSdk = require('stellar-sdk');
 const log4js = require('log4js');
+const { fundUsingFriendbot } = require('./funder');
 
 log4js.configure({
     appenders: {
@@ -76,7 +77,7 @@ module.exports.buildAssetsStellarAdapter = (serverURL, networkPassphrase) => {
         const transaction = new TransactionBuilder(
             questAccount, {
                 fee: BASE_FEE,
-                networkPassphrase: Networks.TESTNET
+                networkPassphrase: networkPassphrase
             })
             .addOperation(Operation.changeTrust({
                 asset: usdcAsset
@@ -134,9 +135,81 @@ module.exports.buildAssetsStellarAdapter = (serverURL, networkPassphrase) => {
         };
     };
 
+    const pathPayments = async (signerSecretKey) => {
+        const questKeypair = Keypair.fromSecret(signerSecretKey);
+
+        const questAccount = await server.loadAccount(questKeypair.publicKey());
+
+        const issuerKeypair = Keypair.random();
+        const distributorKeypair = Keypair.random();
+        const destinationKeypair = Keypair.random();
+
+        await fundUsingFriendbot([questKeypair.publicKey(), issuerKeypair.publicKey(), distributorKeypair.publicKey(), destinationKeypair.publicKey()]);
+        
+        const pathAsset = new Asset(
+            code = 'PATH',
+            issuer = issuerKeypair.publicKey()
+        );          
+
+        const transaction = new TransactionBuilder(
+            questAccount, {
+                fee: BASE_FEE,
+                networkPassphrase: Networks.TESTNET
+            })
+            .addOperation(Operation.changeTrust({
+                asset: pathAsset,
+                source: destinationKeypair.publicKey()
+            }))
+            .addOperation(Operation.changeTrust({
+                asset: pathAsset,
+                source: distributorKeypair.publicKey()
+            }))
+            .addOperation(Operation.payment({
+                destination: distributorKeypair.publicKey(),
+                asset: pathAsset,
+                amount: '100000',
+                source: issuerKeypair.publicKey()
+            }))
+            .addOperation(Operation.createPassiveSellOffer({
+                selling: pathAsset,
+                buying: Asset.native(),
+                amount: '2000',
+                price: '1',
+                source: distributorKeypair.publicKey()
+            }))
+            .addOperation(Operation.createPassiveSellOffer({
+                selling: Asset.native(),
+                buying: pathAsset,
+                amount: '2000',
+                price: '1',
+                source: distributorKeypair.publicKey()
+            }))
+            .addOperation(Operation.pathPaymentStrictSend({
+                sendAsset: Asset.native(),
+                sendAmount: '1000',
+                destination: destinationKeypair.publicKey(),
+                destAsset: pathAsset,
+                destMin: '1000'
+              }))
+            .setTimeout(30).build();
+        
+        transaction.sign(questKeypair,
+            issuerKeypair,
+            destinationKeypair,
+            distributorKeypair
+          );
+
+        let res = await server.submitTransaction(transaction);
+
+        return {
+            transactionHash: res.hash
+        };
+    };
+
     return {
         createPassiveSellOffer,
         createBuyOffer,
-        createSellOffer
+        createSellOffer,
+        pathPayments
     }
 }

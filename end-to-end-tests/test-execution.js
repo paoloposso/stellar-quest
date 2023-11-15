@@ -27,7 +27,8 @@ const secretKey = process.env.SECRET_KEY;
         // console.debug(await stellarNetAdapter.transfer(secretKey, receiverPubKey, '10'));
         // console.debug(await stellarNetAdapter.changeTrust(secretKey, generatedPubKey, 'SANTA', '100'));
         // console.debug(await assetsStellarAdapter.createPassiveSellOffer(secretKey, '0.1', '700'));
-        console.debug(await assetsStellarAdapter.createBuyOffer(secretKey, '0.1', '100'));
+        // console.debug(await assetsStellarAdapter.createBuyOffer(secretKey, '0.1', '100'));
+        await assetsStellarAdapter.pathPayments(secretKey);
     } catch (err) {
         logger.error(err);
     }
