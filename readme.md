@@ -3,7 +3,7 @@
 Created to practice and follow the Stellar Quest avaibale in https://quest.stellar.org/
 I'm creating adapter functions to use the Stellar SDK and make it easier to use with little configuration requirements.
 
-## Test execution
+## Test execution: End-to-end
 
 Go to /test
 
@@ -21,7 +21,7 @@ Go to test-execution.js and use stellarNetAdapter to call the functions you want
 
 Then
 
-run `node index.js` to execute it.
+run `node test-execution.js` to execute it.
 
 Change the values you want, like value, public key to receive funds, etc.
 
