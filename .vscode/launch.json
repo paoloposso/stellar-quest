@@ -4,8 +4,20 @@
       {
         "type": "node",
         "request": "launch",
-        "name": "Debug Your Application",
+        "name": "Debug Test Execution",
         "program": "${workspaceFolder}/end-to-end-tests/test-execution.js", // Replace with your entry file
+        "envFile": "${workspaceFolder}/end-to-end-tests/.env", // Specify the path to your .env file
+        "outFiles": [],
+        "skipFiles": [
+          "<node_internals>/**"
+        ],
+        "args": []
+      },
+      {
+        "type": "node",
+        "request": "launch",
+        "name": "Debug Test Configuration Operations",
+        "program": "${workspaceFolder}/end-to-end-tests/test-execution-configuration.js", // Replace with your entry file
         "envFile": "${workspaceFolder}/end-to-end-tests/.env", // Specify the path to your .env file
         "outFiles": [],
         "skipFiles": [

@@ -6,6 +6,8 @@ const Networks = require('stellar-sdk').Networks;
 
 const { buildPaymentStellarAdapter: buildStellarNetworkAdapter } = require('../stellar/payment-stellar-adapter');
 const { buildAssetsStellarAdapter } = require('../stellar/assets-stellar-adapter');
+const { buildStellarConfigurationAdapter } = require('../stellar/configurations-operations/main');
+const { buildOptionsAdapter } = require('../stellar/set-options/main');
 
 let stellarNetwork = '';
 
@@ -14,6 +16,8 @@ if (process.env.STELLAR_NETWORK === 'PUBLIC') {
 } else {
     stellarNetwork = Networks.TESTNET;
 }
+
+const homeDomain = process.env.HOME_DOMAIN;
 
 const getNetwork = (stellarNetwork) => {
     if (stellarNetwork === Networks.PUBLIC) return 'https://horizon.stellar.org';
@@ -25,7 +29,16 @@ const stellarNetAdapter = buildStellarNetworkAdapter(
     stellarNetwork);
 
 const assetsStellarAdapter = buildAssetsStellarAdapter(
-        getNetwork(stellarNetwork), 
-        stellarNetwork);
+    getNetwork(stellarNetwork), 
+    stellarNetwork);
 
-module.exports = { stellarNetAdapter, assetsStellarAdapter };
+const stellarConfigurationAdapter = buildStellarConfigurationAdapter(
+    getNetwork(stellarNetwork), 
+    stellarNetwork);
+
+const stellarSetOptionsAdapter = buildOptionsAdapter(
+    getNetwork(stellarNetwork), 
+    stellarNetwork,
+    homeDomain);
+
+module.exports = { stellarNetAdapter, assetsStellarAdapter, stellarConfigurationAdapter, stellarSetOptionsAdapter };

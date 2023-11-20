@@ -30,16 +30,9 @@ Then I'm transferring 150 XLMs to another account.
 
 This following snippet comes from test-execution.js and shows these transactions.
 
-
 ```js
-const receiverPubKey = process.env.RECEIVER_PUB_KEY;
-if (!receiverPubKey) {
-    const res = await stellarNetAdapter.createAccount(secretKey, '10000');
-    receiverPubKey = res.newAccountPubKey;
-}
+const res = await stellarNetAdapter.createAccount(secretKey, '10000');
+receiverPubKey = res.newAccountPubKey;
 ```
 
-You can, instead, use an existing pub key to receive this transfer:
-
-Optionally, add RECEIVER_PUB_KEY to the file. 
-If you don't, it will create this random account I meantioned and use it to receive the transfer.
+That is, when an operation has a receiver, create a random account and use it to receive the transfer.
