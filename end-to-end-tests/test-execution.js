@@ -14,6 +14,7 @@ const logger = log4js.getLogger();
 
 const { stellarNetAdapter, assetsStellarAdapter, stellarSetOptionsAdapter, stellarConfigurationAdapter } = require('./setup');
 const { fundUsingFriendbot } = require('../stellar/funder');
+const { Keypair } = require('stellar-sdk');
 
 const secretKey = process.env.SECRET_KEY;
 
@@ -30,9 +31,15 @@ const secretKey = process.env.SECRET_KEY;
         // console.debug(await assetsStellarAdapter.createPassiveSellOffer(secretKey, '0.1', '700'));
         // console.debug(await assetsStellarAdapter.createBuyOffer(secretKey, '0.1', '100'));
         // await assetsStellarAdapter.pathPayments(secretKey);
-        await fundUsingFriendbot([secretKey]);
-        await stellarSetOptionsAdapter.setOptions(secretKey);
+
+        let questKeypair = Keypair.fromSecret(secretKey);
+        let issuerKeyPair = Keypair.random();
+
+        await fundUsingFriendbot([questKeypair.publicKey(), issuerKeyPair.publicKey()]);
+
+        await stellarSetOptionsAdapter.setFlagsAsset(questKeypair, issuerKeyPair);
     } catch (err) {
         logger.error(err);
+        logger.error(err.response.data.extras);
     }
 })();

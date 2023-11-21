@@ -1,5 +1,6 @@
 const stellarSdk = require('stellar-sdk');
 const log4js = require('log4js');
+const { fundUsingFriendbot } = require('../funder');
 
 log4js.configure({
     appenders: {
@@ -59,7 +60,157 @@ module.exports.buildOptionsAdapter = (serverURL, networkPassphrase, homeDomain) 
         };
     };
 
+    /**
+     * 
+     * @param {stellarSdk.Keypair} questKeypair 
+     * @param {stellarSdk.Keypair} issuerKeypair 
+     * @returns 
+     */
+    const setFlagsAsset = async (questKeypair, issuerKeypair) => {
+        const controlledAsset = new Asset(
+            code = 'CONTROL',
+            issuer = issuerKeypair.publicKey()
+        )
+
+        const questAccount = await server.loadAccount(questKeypair.publicKey());
+        const issuerAccount = await server.loadAccount(issuerKeypair.publicKey());
+
+        let transaction = new TransactionBuilder(
+            issuerAccount, {
+                fee: BASE_FEE,
+                networkPassphrase: Networks.TESTNET
+            })
+            .addOperation(Operation.setOptions({
+                setFlags: 3
+            }))
+            .addOperation(Operation.changeTrust({
+                asset: controlledAsset,
+                source: questKeypair.publicKey()
+            }))
+            .setTimeout(30)
+            .build();
+
+        transaction.sign(issuerKeypair, questKeypair);
+
+        _ = await server.submitTransaction(transaction);
+
+        transaction = new TransactionBuilder(
+            issuerAccount, {
+                fee: BASE_FEE,
+                networkPassphrase: Networks.TESTNET
+            })
+            .addOperation(Operation.setTrustLineFlags({
+                trustor: questKeypair.publicKey(),
+                asset: controlledAsset,
+                flags: {
+                    authorized: true
+                }
+            }))
+             .addOperation(Operation.payment({
+                destination: questKeypair.publicKey(),
+                asset: controlledAsset,
+                amount: '100'
+            }))
+            .setTimeout(30)
+            .build();
+        
+        transaction.sign(issuerKeypair);
+
+        _ = await server.submitTransaction(transaction);
+
+        transaction = new TransactionBuilder(
+            issuerAccount, {
+                fee: BASE_FEE,
+                networkPassphrase: Networks.TESTNET
+            })
+            .addOperation(Operation.setTrustLineFlags({
+                trustor: questKeypair.publicKey(),
+                asset: controlledAsset,
+                flags: {
+                    authorized: false
+                }
+            }))
+            .setTimeout(30)
+            .build();
+        
+        transaction.sign(issuerKeypair);
+
+        const res = await server.submitTransaction(transaction);
+
+        return {
+            transactionHash: res.hash
+        };
+    };
+
+    const setOptionsWeightThresholdSigners = async (questSecret, secondSecret, thirdSecret) => {
+        const questKeypair = Keypair.fromSecret(questSecret);
+        const secondSigner = Keypair.fromSecret(secondSecret);
+        const thirdSigner = Keypair.fromSecret(thirdSecret);
+
+        const questAccount = await server.loadAccount(questKeypair.publicKey());
+
+        const transaction = new TransactionBuilder(
+            questAccount, {
+                fee: BASE_FEE,
+                networkPassphrase,
+            })
+            .addOperation(Operation.setOptions({
+                masterWeight: 1,
+                lowThreshold: 5,
+                medThreshold: 5,
+                highThreshold: 5,
+            }))
+            .addOperation(Operation.setOptions({
+                signer: {
+                    ed25519PublicKey: secondSigner.publicKey(),
+                    weight: 2
+                }
+            }))
+            .addOperation(Operation.setOptions({
+                signer: {
+                    ed25519PublicKey: thirdSigner.publicKey(),
+                    weight: 2
+                }
+                }))
+            .setTimeout(30)
+            .build();
+        
+        transaction.sign(questKeypair);
+
+        const res = await server.submitTransaction(transaction);
+
+        // example of transfer transaction to use the multi signature
+        if (res.successful) {
+            const transaction2 = new TransactionBuilder(
+                questAccount, {
+                    fee: BASE_FEE,
+                    networkPassphrase,
+                })
+                .addOperation(Operation.payment({
+                    destination: secondSigner.publicKey(),
+                    asset: Asset.native(),
+                    amount: '1000',
+                }))
+                .setTimeout(30)
+                .build();
+            
+            transaction2.sign(questKeypair, secondSigner, thirdSigner);
+
+            const res2 = await server.submitTransaction(transaction2);
+
+            return {
+                transactionHash: res2.hash
+            };
+        }
+
+        return {
+            transactionHash: res.hash
+        };
+    };
+
     return {
         setOptions,
+        setOptionsWeightThresholdSigners,
+        setFlagsAsset
     };
 }
