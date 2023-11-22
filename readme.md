@@ -3,6 +3,8 @@
 Created to practice and follow the Stellar Quest avaibale in https://quest.stellar.org/
 I'm creating adapter functions to use the Stellar SDK and make it easier to use with little configuration requirements.
 
+This is a set of boilerplates to help configure and use the Stellar SDK.
+
 ## Test execution: End-to-end
 
 Go to /test

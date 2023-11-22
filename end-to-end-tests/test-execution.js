@@ -12,7 +12,12 @@ log4js.configure({
 
 const logger = log4js.getLogger();
 
-const { stellarNetAdapter, assetsStellarAdapter, stellarSetOptionsAdapter, stellarConfigurationAdapter } = require('./setup');
+const { 
+  stellarNetAdapter, 
+  assetsStellarAdapter, 
+  stellarSetOptionsAdapter, 
+  stellarConfigurationAdapterm, 
+  advancedOperationsAdapter } = require('./setup');
 const { fundUsingFriendbot } = require('../stellar/funder');
 const { Keypair } = require('stellar-sdk');
 
@@ -37,7 +42,7 @@ const secretKey = process.env.SECRET_KEY;
 
         await fundUsingFriendbot([questKeypair.publicKey(), issuerKeyPair.publicKey()]);
 
-        await stellarSetOptionsAdapter.setFlagsAsset(questKeypair, issuerKeyPair);
+        await advancedOperationsAdapter.bumpSequence(questKeypair);
     } catch (err) {
         logger.error(err);
         logger.error(err.response.data.extras);

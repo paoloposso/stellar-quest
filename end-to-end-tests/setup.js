@@ -8,6 +8,7 @@ const { buildPaymentStellarAdapter: buildStellarNetworkAdapter } = require('../s
 const { buildAssetsStellarAdapter } = require('../stellar/assets-stellar-adapter');
 const { buildStellarConfigurationAdapter } = require('../stellar/configurations-operations/main');
 const { buildOptionsAdapter } = require('../stellar/set-options/main');
+const { buildAdvanceOpAdapter } = require('../stellar/advance-operations/main');
 
 let stellarNetwork = '';
 
@@ -41,4 +42,15 @@ const stellarSetOptionsAdapter = buildOptionsAdapter(
     stellarNetwork,
     homeDomain);
 
-module.exports = { stellarNetAdapter, assetsStellarAdapter, stellarConfigurationAdapter, stellarSetOptionsAdapter };
+const advancedOperationsAdapter = buildAdvanceOpAdapter(
+    getNetwork(stellarNetwork), 
+    stellarNetwork,
+    homeDomain);
+
+module.exports = { 
+    stellarNetAdapter, 
+    assetsStellarAdapter, 
+    stellarConfigurationAdapter, 
+    stellarSetOptionsAdapter, 
+    advancedOperationsAdapter 
+};
