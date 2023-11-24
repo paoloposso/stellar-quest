@@ -74,7 +74,39 @@ module.exports.buildAdvanceOpAdapter = (serverURL, networkPassphrase) => {
     };
   };
 
+  const sponsorshipOperation = async (questKeypair, sponsorKeypair) => {
+    // const questAccount = await server.loadAccount(questKeypair.publicKey());
+    const sponsorAccount = await server.loadAccount(sponsorKeypair.publicKey());
+
+    const transaction = new TransactionBuilder(
+      sponsorAccount, {
+        fee: BASE_FEE,
+        networkPassphrase: networkPassphrase
+      })
+      .addOperation(Operation.beginSponsoringFutureReserves({
+        sponsoredId: questKeypair.publicKey()
+      }))
+      .addOperation(Operation.createAccount({
+        destination: questKeypair.publicKey(),
+        startingBalance: '0'
+      }))
+      .addOperation(Operation.endSponsoringFutureReserves({
+        source: questKeypair.publicKey()
+      }))
+      .setTimeout(30)
+      .build();
+    
+    transaction.sign(questKeypair, sponsorKeypair);
+
+    const res = await server.submitTransaction(transaction);
+
+    return {
+        transactionHash: res.hash
+    };
+  };
+
   return {
-    bumpSequence
+    bumpSequence,
+    sponsorshipOperation,
   };
 }

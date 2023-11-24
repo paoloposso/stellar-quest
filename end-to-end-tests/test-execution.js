@@ -38,11 +38,11 @@ const secretKey = process.env.SECRET_KEY;
         // await assetsStellarAdapter.pathPayments(secretKey);
 
         let questKeypair = Keypair.fromSecret(secretKey);
-        let issuerKeyPair = Keypair.random();
+        let sponsorKeypair = Keypair.random();
 
-        await fundUsingFriendbot([questKeypair.publicKey(), issuerKeyPair.publicKey()]);
+        await fundUsingFriendbot([sponsorKeypair.publicKey()]);
 
-        await advancedOperationsAdapter.bumpSequence(questKeypair);
+        await advancedOperationsAdapter.sponsorshipOperation(questKeypair, sponsorKeypair);
     } catch (err) {
         logger.error(err);
         logger.error(err.response.data.extras);
