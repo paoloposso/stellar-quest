@@ -17,7 +17,9 @@ const {
     Networks,
     Operation,
     BASE_FEE,
-    Account
+    Account,
+    Claimant,
+    Asset,
 } = stellarSdk;
 
 module.exports.buildAdvanceOpAdapter = (serverURL, networkPassphrase) => {
@@ -105,8 +107,75 @@ module.exports.buildAdvanceOpAdapter = (serverURL, networkPassphrase) => {
     };
   };
 
+  const execTransactionClaimableBalance = async (questKeypair, claimantKeypair) => {
+    // The `claimant` must wait at least 5 minutes before they can claim the balance.
+    const claimant = new Claimant(
+      claimantKeypair.publicKey(),
+      Claimant.predicateNot(
+        Claimant.predicateBeforeRelativeTime('300')
+      )
+    );
+
+    // The `questClaimant` may claim the balance at any time (as long as it has not yet been claimed)
+    const questClaimant = new Claimant(
+      questKeypair.publicKey(),
+      Claimant.predicateUnconditional()
+    );
+
+    const questAccount = await server.loadAccount(questKeypair.publicKey());
+
+    const firstTransaction = new TransactionBuilder(
+      questAccount, {
+        fee: BASE_FEE,
+        networkPassphrase,
+      })
+      .addOperation(Operation.createClaimableBalance({
+        asset: Asset.native(),
+        amount: '100',
+        claimants: [
+          claimant,
+          questClaimant
+        ]
+      }))
+      .setTimeout(30)
+      .build();
+    
+    firstTransaction.sign(questKeypair);
+
+    const res = await server.submitTransaction(firstTransaction);
+    const claimableBalanceId = firstTransaction.getClaimableBalanceId(0);
+
+    return {
+      transactionHash: res.hash,
+      claimableBalanceId
+    };
+  };
+
+  const claimBalance = async (claimantKeypair, claimableBalanceId) => {
+    const claimantAccount = await server.loadAccount(claimantKeypair.publicKey());
+    const claimTransaction = new TransactionBuilder(
+      claimantAccount, {
+        fee: BASE_FEE,
+        networkPassphrase,
+      })
+      .addOperation(Operation.claimClaimableBalance({
+        balanceId: claimableBalanceId
+      }))
+      .setTimeout(30)
+      .build();
+    
+    claimTransaction.sign(claimantKeypair);
+    res = await server.submitTransaction(claimTransaction);
+
+    return {
+        transactionHash: res.hash
+    };
+  }
+
   return {
     bumpSequence,
     sponsorshipOperation,
+    execTransactionClaimableBalance,
+    claimBalance
   };
 }

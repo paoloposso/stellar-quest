@@ -5,7 +5,7 @@
         "type": "node",
         "request": "launch",
         "name": "Debug Test Execution",
-        "program": "${workspaceFolder}/end-to-end-tests/test-execution.js", // Replace with your entry file
+        "program": "${workspaceFolder}/end-to-end-tests/main.js", // Replace with your entry file
         "envFile": "${workspaceFolder}/end-to-end-tests/.env", // Specify the path to your .env file
         "outFiles": [],
         "skipFiles": [

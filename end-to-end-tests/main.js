@@ -37,12 +37,21 @@ const secretKey = process.env.SECRET_KEY;
         // console.debug(await assetsStellarAdapter.createBuyOffer(secretKey, '0.1', '100'));
         // await assetsStellarAdapter.pathPayments(secretKey);
 
-        let questKeypair = Keypair.fromSecret(secretKey);
-        let sponsorKeypair = Keypair.random();
+        // let questKeypair = Keypair.fromSecret(secretKey);
+        // let claimantKeypair = Keypair.random();
 
-        await fundUsingFriendbot([sponsorKeypair.publicKey()]);
+        // console.log(`Claimant Public Key: ${claimantKeypair.publicKey()}`);
+        // console.log(`Claimant Secret Key: ${claimantKeypair.secret()}`);
 
-        await advancedOperationsAdapter.sponsorshipOperation(questKeypair, sponsorKeypair);
+        // await fundUsingFriendbot([questKeypair.publicKey(), claimantKeypair.publicKey()]);
+
+        // const res = await advancedOperationsAdapter.execTransactionClaimableBalance(questKeypair, claimantKeypair);
+
+        console.log(Keypair.fromSecret('SCJ7D7ZFUNHDRWDWTKFPZT3SXF5CTQSRECJ2XICFFLWRG2FDF6UYK7V5').publicKey());
+
+        // const res = await advancedOperationsAdapter.claim(Keypair.fromSecret('SAKZWIZIEETVEYTCYR4O5IATCC6GP3EGWTGY5XK3GWPRCNZLNQMNCXJJ'), '00000000d92e22c236b288d40adc2fed02deb68ebd257fe534640c5168d8cfb8fe1c8f15');
+
+        console.log(res);
     } catch (err) {
         logger.error(err);
         logger.error(err.response.data.extras);
