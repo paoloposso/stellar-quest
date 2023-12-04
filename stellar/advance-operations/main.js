@@ -20,6 +20,8 @@ const {
     Account,
     Claimant,
     Asset,
+    LiquidityPoolAsset,
+    getLiquidityPoolId
 } = stellarSdk;
 
 module.exports.buildAdvanceOpAdapter = (serverURL, networkPassphrase) => {
@@ -172,10 +174,205 @@ module.exports.buildAdvanceOpAdapter = (serverURL, networkPassphrase) => {
     };
   }
 
+  const clawbackOperation = async (questKeypair, destinationKeypair) => {
+    const questAccount = await server.loadAccount(questKeypair.publicKey());
+    const setOptionsTransaction = new TransactionBuilder(
+      questAccount, {
+        fee: BASE_FEE,
+        networkPassphrase,
+      })
+      .addOperation(Operation.setOptions({
+        setFlags: 10
+      }))
+      .setTimeout(30)
+      .build();
+    
+    setOptionsTransaction.sign(questKeypair);
+    let transactionResponse = await server.submitTransaction(setOptionsTransaction);
+
+    let result = [{
+      operation: 'setOptions',
+      transactionHash: transactionResponse.hash
+    }];
+
+    const clawbackAsset = new Asset(
+      code = 'CLAWBACK',
+      issuer = questKeypair.publicKey()
+    )
+    
+    const paymentTransaction = new TransactionBuilder(
+      questAccount, {
+        fee: BASE_FEE,
+        networkPassphrase
+      })
+      .addOperation(Operation.changeTrust({
+        asset: clawbackAsset,
+        source: destinationKeypair.publicKey()
+      }))
+      .addOperation(Operation.payment({
+        destination: destinationKeypair.publicKey(),
+        asset: clawbackAsset,
+        amount: '500'
+      }))
+      .setTimeout(30)
+      .build();
+    
+    paymentTransaction.sign(
+      questKeypair,
+      destinationKeypair
+    )
+    
+    result.push({
+      operation: 'payment',
+      transactionHash: await server.submitTransaction(paymentTransaction).hash
+    });
+
+    const clawbackTransaction = new TransactionBuilder(
+      questAccount, {
+        fee: BASE_FEE,
+        networkPassphrase: Networks.TESTNET
+      })
+      .addOperation(Operation.clawback({
+        asset: clawbackAsset,
+        amount: '250',
+        from: destinationKeypair.publicKey()
+      }))
+      .setTimeout(30)
+      .build();
+      
+    clawbackTransaction.sign(questKeypair);
+
+    let r = await server.submitTransaction(clawbackTransaction);
+
+    result.push(
+      {
+        operation: 'clawback',
+        transactionHash: r.hash
+      }
+    );
+
+    return result;
+  }
+
+  const liquidityPools = async (questKeypair, tradeKeypair) => {
+    const result = [];
+
+    const questAccount = await server.loadAccount(questKeypair.publicKey());
+    const noodleAsset = new Asset(
+      code = 'NOODLE',
+      issuer = questKeypair.publicKey()
+    )
+
+    const lpAsset = new LiquidityPoolAsset(
+      assetA = Asset.native(),
+      assetB = noodleAsset,
+      fee = 30
+    )
+
+    const liquidityPoolId = getLiquidityPoolId('constant_product', lpAsset).toString('hex');
+
+    // const lpDepositTransaction = new TransactionBuilder(
+    //   questAccount, {
+    //     fee: BASE_FEE,
+    //     networkPassphrase: Networks.TESTNET
+    //   })
+    //   .addOperation(Operation.changeTrust({
+    //     asset: lpAsset
+    //   }))
+    //   .addOperation(Operation.liquidityPoolDeposit({
+    //     liquidityPoolId: liquidityPoolId,
+    //     maxAmountA: '100',
+    //     maxAmountB: '100',
+    //     minPrice: {
+    //       n: 1,
+    //       d: 1
+    //     },
+    //     maxPrice: {
+    //       n: 1,
+    //       d: 1
+    //     }
+    //   }))
+    //   .setTimeout(30)
+    //   .build();
+
+    // lpDepositTransaction.sign(questKeypair);
+
+    // let r = await server.submitTransaction(lpDepositTransaction);
+
+    // result.push(
+    //   {
+    //     operation: 'lpDepositTransaction',
+    //     transactionHash: r.hash
+    //   }
+    // );
+
+    const tradeAccount = await server.loadAccount(tradeKeypair.publicKey());
+
+    const pathPaymentTransaction = new TransactionBuilder(
+      tradeAccount, {
+        fee: BASE_FEE,
+        networkPassphrase: Networks.TESTNET
+      })
+      .addOperation(Operation.changeTrust({
+        asset: noodleAsset,
+        source: tradeKeypair.publicKey()
+      }))
+      .addOperation(Operation.pathPaymentStrictReceive({
+        sendAsset: Asset.native(),
+        sendMax: '1000',
+        destination: tradeKeypair.publicKey(),
+        destAsset: noodleAsset,
+        destAmount: '1',
+        source: tradeKeypair.publicKey()
+      }))
+      .setTimeout(30)
+      .build()
+    
+    pathPaymentTransaction.sign(tradeKeypair);
+    
+    res = await server.submitTransaction(pathPaymentTransaction)
+
+    result.push(
+      {
+        operation: 'pathPaymentStrictReceive',
+        transactionHash: res.hash
+      }
+    );
+
+    const lpWithdrawTransaction = new TransactionBuilder(
+      questAccount, {
+        fee: BASE_FEE,
+        networkPassphrase: Networks.TESTNET
+      })
+      .addOperation(Operation.liquidityPoolWithdraw({
+        liquidityPoolId: liquidityPoolId,
+        amount: '100',
+        minAmountA: '0',
+        minAmountB: '0'
+      }))
+      .setTimeout(30)
+      .build();
+    
+    lpWithdrawTransaction.sign(questKeypair);
+    
+    res = await server.submitTransaction(lpWithdrawTransaction)
+
+    result.push(
+      {
+        operation: 'liquidityPoolWithdraw',
+        transactionHash: res.hash
+      }
+    );
+
+    return result;
+  }
+
   return {
     bumpSequence,
     sponsorshipOperation,
     execTransactionClaimableBalance,
-    claimBalance
+    claimBalance,
+    clawbackOperation,
+    liquidityPools
   };
 }
