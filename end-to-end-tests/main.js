@@ -17,7 +17,9 @@ const {
   assetsStellarAdapter, 
   stellarSetOptionsAdapter, 
   stellarConfigurationAdapterm, 
-  advancedOperationsAdapter } = require('./setup');
+  advancedOperationsAdapter,
+  sideQuestsAdapter ,
+} = require('./setup');
 const { fundUsingFriendbot } = require('../stellar/funder');
 const { Keypair } = require('stellar-sdk');
 
@@ -38,16 +40,12 @@ const secretKey = process.env.SECRET_KEY;
         // await assetsStellarAdapter.pathPayments(secretKey);
 
         let questKeypair = Keypair.fromSecret(secretKey);
+        let senderKeypair = Keypair.random();
         let receiverKeypair = Keypair.random();
 
-        // console.log(`Claimant Public Key: ${claimantKeypair.publicKey()}`);
-        // console.log(`Claimant Secret Key: ${claimantKeypair.secret()}`);
+        await fundUsingFriendbot([questKeypair.publicKey(), senderKeypair.publicKey(), receiverKeypair.publicKey()]);
 
-        await fundUsingFriendbot([questKeypair.publicKey(), receiverKeypair.publicKey()]);
-
-        // const res = await advancedOperationsAdapter.execTransactionClaimableBalance(questKeypair, claimantKeypair);
-
-        const res = await advancedOperationsAdapter.liquidityPools(questKeypair, receiverKeypair);
+        const res = await sideQuestsAdapter.feeBump(questKeypair, senderKeypair, receiverKeypair);
 
         console.log(res);
     } catch (err) {

@@ -3,7 +3,7 @@
 Created to practice and follow the Stellar Quest avaibale in https://quest.stellar.org/
 I'm creating adapter functions to use the Stellar SDK and make it easier to use with little configuration requirements.
 
-This is a set of boilerplates to help configure and use the Stellar SDK.
+**Kind reminder:** This is not organized at all. It's only a set of boilerplates that can be useful to create services that communicate with the Stellar network using the SDK.
 
 ## Test execution: End-to-end
 
