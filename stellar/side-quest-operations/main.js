@@ -18,7 +18,8 @@ const {
     BASE_FEE,
     Asset,
     TransactionBuilder,
-    Operation
+    Operation,
+    Keypair,
 } = stellarSdk;
 
 module.exports.buildSideQuestsAdapter = (serverURL, networkPassphrase) => {
@@ -67,7 +68,48 @@ module.exports.buildSideQuestsAdapter = (serverURL, networkPassphrase) => {
         };
     };
 
+    const mintNft = async (receiverKeypair, metadataCID) => {
+        const account = await server.loadAccount('GBCJNIQDK2PAETZRLRSGMOHBO43H6WLOSZNTGPNTWXGQYB5YQPI26QOK');
+
+        const issuerKeypair = Keypair.fromSecret('SCNUV5JLGWUIWAO7MLW4L7PMWLTC5N3G6ZML2FHAUCHPSAYEHJZLPQAD');
+        const nftAsset = new Asset('PIZZAASSET', issuerKeypair.publicKey());
+
+        let transaction = new TransactionBuilder(
+            account, {
+              fee: BASE_FEE,
+              networkPassphrase
+            })
+            // Add the NFT metadata to the issuer account using a `manageData` operation.
+            .addOperation(Operation.manageData({
+              name: 'ipfshash',
+              value: metadataCID,
+              source: issuerKeypair.publicKey(),
+            }))
+            .addOperation(Operation.changeTrust({
+                asset: nftAsset,
+                limit: '0.0000001',
+                source: receiverKeypair.publicKey(),
+              }))
+            .addOperation(Operation.payment({
+                destination: receiverKeypair.publicKey(),
+                asset: nftAsset,
+                amount: "0.0000001",
+                source: issuerKeypair.publicKey(),
+              }))
+            .setTimeout(30)
+            .build();
+
+        transaction.sign(issuerKeypair, receiverKeypair);
+
+        const res = await server.submitTransaction(transaction);
+
+        return {
+            transactionHash: res.hash,
+        };
+    };
+
     return {
         feeBump,
+        mintNft,
     };
 }

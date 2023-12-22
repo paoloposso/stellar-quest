@@ -40,12 +40,12 @@ const secretKey = process.env.SECRET_KEY;
         // await assetsStellarAdapter.pathPayments(secretKey);
 
         let questKeypair = Keypair.fromSecret(secretKey);
-        let senderKeypair = Keypair.random();
+        // let senderKeypair = Keypair.random();
         let receiverKeypair = Keypair.random();
 
-        await fundUsingFriendbot([questKeypair.publicKey(), senderKeypair.publicKey(), receiverKeypair.publicKey()]);
+        await fundUsingFriendbot([receiverKeypair.publicKey()]);
 
-        const res = await sideQuestsAdapter.feeBump(questKeypair, senderKeypair, receiverKeypair);
+        const res = await sideQuestsAdapter.mintNft(questKeypair, 'bafkreigbc774qrjtfdlkhziazqvtco2kzahnpopxzezbabq3oinhu5wr3m');
 
         console.log(res);
     } catch (err) {
